@@ -6,3 +6,10 @@
 *.tfvars
 terraform.tfvars
 *.json
+
+#Application
+*.env
+Application/.env
+Application/pythonSqlVenv/
+Application/__pycache__/
+Application/test.py

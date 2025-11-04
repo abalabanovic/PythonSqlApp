@@ -1,0 +1,8 @@
+python-dotenv
+requests
+tenacity
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+typing-extensions
