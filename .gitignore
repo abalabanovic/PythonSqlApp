@@ -6,6 +6,9 @@
 *.tfvars
 terraform.tfvars
 *.json
+Infrastructure/*.json
+Infrastructure/terraform.tfvars
+*.tfvars
 
 #Application
 *.env

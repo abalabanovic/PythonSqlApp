@@ -1,8 +1,85 @@
+#Networking
 
-resource "google_artifact_registry_repository" "python-sql-application" {
- location = var.region
- repository_id = var.artifact_registry_name
- description = "Docker registry for python sql application"
- format = "DOCKER"
+resource "google_compute_network" "vpc" {
+  name = var.vpc_name
+  auto_create_subnetworks = false
 }
 
+resource "google_compute_subnetwork" "subnet" {
+  name = var.vpc_subnet_name
+  region = var.region
+  ip_cidr_range = var.private_cicd_range
+  network = google_compute_network.vpc.id
+}
+
+# Artifact Registry
+
+resource "google_artifact_registry_repository" "pythonsqlapp-registry" {
+    location = var.region
+    repository_id = var.application_gar_name
+    format = var.gar_format
+    description = "Container image repo for app"
+}
+
+# SQL Cloud Database
+
+resource "google_sql_database_instance" "db_instance" {
+    name = var.db_instance_name
+    region = var.region
+    database_version = var.database_version
+
+    settings {
+      tier = var.database_tier
+
+      ip_configuration {
+        ipv4_enabled = false
+        private_network = google_compute_network.vpc.id
+      }
+    }
+  
+    deletion_protection = false
+}
+
+resource "google_sql_user" "db_admin" {
+    name = var.admin_username
+    instance = google_sql_database_instance.db_instance.db_instance.name
+    password = var.admin_password
+}
+
+resource "google_sql_user" "db_application_user" {
+  name = var.application_user_name
+  instance = google_sql_database_instance.db_instance.name
+  password = var.application_user_password
+}
+
+resource "google_sql_database" "app_db" {
+    name = var.db_name
+    instance = google_sql_database_instance.db_instance.db_instance.name
+}
+
+# GKE Cluster
+
+resource "google_container_cluster" "gke_cluster" {
+    name = var.gke_cluster_name
+    location = var.region
+
+    networking_mode = "VPC_NATIVE"
+    network = google_compute_network.vpc.id
+    subnetwork = google_compute_subnetwork.subnet.id
+
+    remove_default_node_pool = true
+    initial_node_count = 1
+  
+}
+
+resource "google_container_node_pool" "primary_nodes" {
+    name = var.node_pool_name
+    cluster = google_container_cluster.gke_cluster.name
+    location = var.region
+
+    node_config {
+      machine_type = var.node_machine_type
+      oauth_scopes = ["https://www.googleapis.com/auth/cloud_platform"]
+    }
+    initial_node_count = var.initial_node_count
+}

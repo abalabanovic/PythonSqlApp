@@ -19,4 +19,7 @@ def fetch_and_store_weather(city: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@app.get("/health")
+def health_check():
+    return {"status": "alive"}
     
