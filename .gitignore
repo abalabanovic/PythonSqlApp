@@ -16,3 +16,4 @@ Application/.env
 Application/pythonSqlVenv/
 Application/__pycache__/
 Application/test.py
+Application/kubernetes/weather-app/secrets.yaml
