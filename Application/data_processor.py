@@ -1,13 +1,8 @@
 from typing import Dict
 from logger_config import logger
 
-class WeatherDataProcessor:
-    """
-    Processes raw weather data from OpenWeatherMap API
-    and prepares it for insertion into the database.
-    """
 
-    def process(self, raw_data: Dict) -> Dict:
+def process_weather_data(raw_data: Dict) -> Dict:
         """
         Transform and validate raw weather JSON from API.
         Returns a dictionary ready for database insertion.

@@ -10,15 +10,10 @@ api_client = WeatherAPIClient()
 
 @app.get("/fetch_weather/{city}")
 def fetch_and_store_weather(city: str):
-    db: Session = next(get_db())
-    try:
-        raw_data = api_client.fetch_weather(city)
-        processed_data = process_weather_data(raw_data)
-        insert_weather_data(db, processed_data)
-        return {"status": "success", "city": city, "data": processed_data}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
+    raw_data = api_client.fetch_weather(city)
+    processed_data = process_weather_data(raw_data)
+    print(f"Weather data: {processed_data}")
+
 @app.get("/health")
 def health_check():
     return {"status": "alive"}
