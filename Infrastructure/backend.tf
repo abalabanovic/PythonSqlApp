@@ -1,6 +1,7 @@
 terraform {
   backend "gcs" {
-    bucket = var.tf_backend_bucket
+    bucket = "pythonsqlapp-tf-backend"
     prefix = "infra/state"
+    credentials = file("service-account-key.json")
   }
 }

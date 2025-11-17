@@ -3,15 +3,16 @@ variable "project_id" {
     description = "GCP project ID"
 }
 
-variable "tf_backend_bucket" {
-    type = string
-    description = "Backend bucket for tf"
-}
-
 variable "region" {
     type = string
-    description = "GCP zone"
+    description = "GCP region"
     default = "us-central1"
+}
+
+variable "zone" {
+  type = string
+  description = "GCP zone"
+  default = "us-central1-a"
 }
 
 variable "vpc_name" {
@@ -96,4 +97,9 @@ variable "node_pool_name" {
 
 variable "initial_node_count" {
   type = number
+}
+
+variable "disk_size_gb" {
+  type = number
+  description = "Size of node disk"
 }
