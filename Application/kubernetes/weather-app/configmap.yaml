@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: CongigMap
+metadata:
+  name: weather-app-config
+data:
+  API_BASE_URL: "https://api.openweathermap.org/data/2.5/weather"
+  MAX_API_RETRIES: "3"
+  RETRY_BACKOFF_FACTOR: "0.3"
+  REQUEST_TIMEOUT: "10"
+  
