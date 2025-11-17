@@ -3,11 +3,6 @@ variable "project_id" {
     description = "GCP project ID"
 }
 
-variable "tf_backend_bucket" {
-    type = string
-    description = "Backend bucket for tf"
-}
-
 variable "region" {
     type = string
     description = "GCP zone"

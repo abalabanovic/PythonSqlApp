@@ -22,7 +22,7 @@ resource "google_artifact_registry_repository" "pythonsqlapp-registry" {
 }
 
 # SQL Cloud Database
-
+/*
 resource "google_sql_database_instance" "db_instance" {
     name = var.db_instance_name
     region = var.region
@@ -56,30 +56,38 @@ resource "google_sql_database" "app_db" {
     name = var.db_name
     instance = google_sql_database_instance.db_instance.db_instance.name
 }
-
+*/
 # GKE Cluster
 
 resource "google_container_cluster" "gke_cluster" {
     name = var.gke_cluster_name
-    location = var.region
+    location = "us-central1-a"
 
     networking_mode = "VPC_NATIVE"
     network = google_compute_network.vpc.id
     subnetwork = google_compute_subnetwork.subnet.id
 
+    private_cluster_config {
+      enable_private_nodes = true
+      enable_private_endpoint = false
+      master_ipv4_cidr_block = "172.16.0.0/28"
+    }
+
     remove_default_node_pool = true
     initial_node_count = 1
+    deletion_protection = false
   
 }
 
 resource "google_container_node_pool" "primary_nodes" {
     name = var.node_pool_name
     cluster = google_container_cluster.gke_cluster.name
-    location = var.region
+    location = google_container_cluster.gke_cluster.location
 
     node_config {
       machine_type = var.node_machine_type
-      oauth_scopes = ["https://www.googleapis.com/auth/cloud_platform"]
+      disk_size_gb = 50
+      oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
     }
     initial_node_count = var.initial_node_count
 }
