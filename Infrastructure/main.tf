@@ -89,14 +89,11 @@ resource "google_sql_database_instance" "db_instance" {
 resource "google_sql_user" "db_admin" {
     name = var.admin_username
     instance = google_sql_database_instance.db_instance.name
+    host = "%"
     password = var.admin_password
+    project = var.project_id
 }
 
-resource "google_sql_user" "db_application_user" {
-  name = var.application_user_name
-  instance = google_sql_database_instance.db_instance.name
-  password = var.application_user_password
-}
 
 resource "google_sql_database" "app_db" {
     name = var.db_name

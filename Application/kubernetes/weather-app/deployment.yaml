@@ -16,9 +16,21 @@ spec:
     spec:
       containers:
         - name: weather-app
-          image: us-central1-docker.pkg.dev/pythonsqlapp-478016/pythonsqlapp/weather-app:latest
+          image: us-central1-docker.pkg.dev/pythonsqlapp-478016/pythonsqlapp/weather-app:test-01
           ports:
-            - containerPort: 8000
+            - containerPort: 8080
+          livenessProbe: 
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
           resources:
             requests:
               cpu: "150m"
