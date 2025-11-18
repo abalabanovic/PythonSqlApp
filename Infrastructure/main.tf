@@ -94,6 +94,14 @@ resource "google_sql_user" "db_admin" {
     project = var.project_id
 }
 
+resource "google_sql_user" "db_application_user" {
+    name = var.application_user_name
+    instance = google_sql_database_instance.db_instance.name
+    host = "%"
+    password = var.application_user_password
+    project = var.project_id
+}
+
 
 resource "google_sql_database" "app_db" {
     name = var.db_name

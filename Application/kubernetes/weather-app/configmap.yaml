@@ -5,6 +5,6 @@ metadata:
 data:
   API_BASE_URL: "https://api.openweathermap.org/data/2.5/weather"
   MAX_API_RETRIES: "3"
-  RETRY_BACKOFF_FACTOR: "0.3"
+  RETRY_BACKOFF_FACTOR: "1"
   REQUEST_TIMEOUT: "10"
   

@@ -7,9 +7,9 @@ class WeatherAPIClient:
     def __init__(self):
         self.base_url = API_BASE_URL
         self.api_key = API_KEY
-        self.max_retries = MAX_API_RETRIES
-        self.backoff_factor = RETRY_BACKOFF_FACTOR
-        self.timeout = REQUEST_TIMEOUT
+        self.max_retries = int(MAX_API_RETRIES)
+        self.backoff_factor = int(RETRY_BACKOFF_FACTOR)
+        self.timeout = int(REQUEST_TIMEOUT)
 
     def fetch_weather(self, city: str):
         """Fetch weather data for a city from OpenWeatherMap"""
