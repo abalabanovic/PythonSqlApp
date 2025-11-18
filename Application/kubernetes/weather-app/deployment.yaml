@@ -16,15 +16,15 @@ spec:
     spec:
       containers:
         - name: weather-app
-          image: us-central1-docker.pkg.dev/my-gcp-project/pythonsqlapp/weather-app:latest
+          image: us-central1-docker.pkg.dev/pythonsqlapp-478016/pythonsqlapp/weather-app:latest
           ports:
             - containerPort: 8000
           resources:
             requests:
-              cpu: "250m"
-              memory: "256Mi"
+              cpu: "150m"
+              memory: "128Mi"
             limits:
-              cpu: "500m"
+              cpu: "300m"
               memory: "512Mi"
           env:
             - name: API_KEY
