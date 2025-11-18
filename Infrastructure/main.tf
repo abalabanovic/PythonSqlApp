@@ -12,6 +12,20 @@ resource "google_compute_subnetwork" "subnet" {
   network = google_compute_network.vpc.id
 }
 
+resource "google_compute_global_address" "private_ip_range" {
+  name          = "google-services-range" 
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16 
+  network       = google_compute_network.vpc.id
+}
+
+resource "google_service_networking_connection" "service_vpc_connection" {
+  network                 = google_compute_network.vpc.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+}
+
 # Artifact Registry
 
 resource "google_artifact_registry_repository" "pythonsqlapp-registry" {
@@ -36,13 +50,16 @@ resource "google_sql_database_instance" "db_instance" {
         private_network = google_compute_network.vpc.id
       }
     }
-  
+    depends_on = [
+      google_service_networking_connection.service_vpc_connection
+    ]
+
     deletion_protection = false
 }
 
 resource "google_sql_user" "db_admin" {
     name = var.admin_username
-    instance = google_sql_database_instance.db_instance.db_instance.name
+    instance = google_sql_database_instance.db_instance.name
     password = var.admin_password
 }
 
@@ -54,7 +71,7 @@ resource "google_sql_user" "db_application_user" {
 
 resource "google_sql_database" "app_db" {
     name = var.db_name
-    instance = google_sql_database_instance.db_instance.db_instance.name
+    instance = google_sql_database_instance.db_instance.name
 }
 
 # GKE Cluster
