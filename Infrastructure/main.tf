@@ -26,6 +26,35 @@ resource "google_service_networking_connection" "service_vpc_connection" {
   reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
 }
 
+resource "google_compute_address" "nat_ip" {
+  name = "gke-nat-ip"
+  region = var.region
+}
+
+resource "google_compute_router" "router" {
+  name = "gke-nat-router"
+  network = google_compute_network.vpc.id
+  region = var.region
+}
+
+resource "google_compute_router_nat" "nat_config" {
+  name = "gke-cloud-nat"
+  router = google_compute_router.router.name
+  region = google_compute_router.router.region
+
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+  nat_ip_allocate_option = "MANUAL_ONLY"
+  nat_ips = [google_compute_address.nat_ip.self_link]
+
+  min_ports_per_vm = 64
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+  
+}
+
 # Artifact Registry
 
 resource "google_artifact_registry_repository" "pythonsqlapp-registry" {
