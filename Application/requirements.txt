@@ -6,3 +6,4 @@ uvicorn
 sqlalchemy
 pymysql
 typing-extensions
+prometheus-client

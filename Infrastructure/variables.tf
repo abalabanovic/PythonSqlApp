@@ -103,3 +103,7 @@ variable "disk_size_gb" {
   type = number
   description = "Size of node disk"
 }
+
+variable "admin_email" {
+  type = string
+}

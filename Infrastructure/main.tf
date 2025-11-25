@@ -123,6 +123,9 @@ resource "google_container_cluster" "gke_cluster" {
       enable_private_endpoint = false
       master_ipv4_cidr_block = "172.16.0.0/28"
     }
+
+  
+   
     
     deletion_protection = false
     remove_default_node_pool = true
@@ -141,4 +144,177 @@ resource "google_container_node_pool" "primary_nodes" {
       oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
     }
     initial_node_count = var.initial_node_count
+}
+
+# Monitoring for application and Cloud SQL
+
+resource "google_monitoring_notification_channel" "email_channel" {
+  display_name = "Admin Email Alert Channel"
+  type = "email"
+  labels = {
+    email_address = var.admin_email
+  }
+}
+
+resource "google_monitoring_alert_policy" "cloudsql_disk_alert" {
+  display_name = "Cloud SQL: Disk Utilization Near Full (>90%)"
+  project = var.project_id
+
+  combiner = "AND"
+  conditions {
+    display_name = "Disk utilization"
+    condition_threshold {
+      filter = "resource.type=\"cloudsql_database\" AND resource.label.database_id=\"${var.db_instance_name}\" AND metric.type=\"cloudsql.googleapis.com/database/disk/utilization\""
+      duration = "300s"
+      comparison = "COMPARISON_GT"
+      threshold_value = 0.9
+      
+    }
+
+  }
+  notification_channels = [
+    google_monitoring_notification_channel.email_channel.id
+  ]
+  
+  documentation {
+    mime_type = "text/markdown"
+  }
+
+}
+
+resource "google_monitoring_dashboard" "cloudsql_dashboard" {
+  project      = var.project_id
+
+  dashboard_json = jsonencode({
+    "displayName" : "Cloud SQL Health and Performance Dashboard",
+    "gridLayout" : {
+      "columns" : "2",
+      "widgets" : [
+        # Widget 1: CPU Utilization
+        {
+          "title" : "1. CPU Utilization (Percent)",
+          "xyChart" : {
+            "dataSets" : [{
+              "timeSeriesQuery" : {
+                "timeSeriesFilter" : {
+                  "filter" : "metric.type=\"cloudsql.googleapis.com/database/cpu/utilization\" resource.type=\"cloudsql_database\"",
+                  "aggregation" : { "alignmentPeriod" : "60s", "perSeriesAligner" : "ALIGN_MEAN" }
+                },
+                "unitOverride" : "percent"
+              }
+            }],
+            "timeshiftDuration": "0s",
+          }
+        },
+        # Widget 2: Disk Utilization
+        {
+          "title" : "2. Disk Utilization (Percent)",
+          "xyChart" : {
+            "dataSets" : [{
+              "timeSeriesQuery" : {
+                "timeSeriesFilter" : {
+                  "filter" : "metric.type=\"cloudsql.googleapis.com/database/disk/utilization\" resource.type=\"cloudsql_database\"",
+                  "aggregation" : { "alignmentPeriod" : "60s", "perSeriesAligner" : "ALIGN_MEAN" }
+                },
+                "unitOverride" : "percent"
+              }
+            }],
+            "timeshiftDuration": "0s",
+          }
+        },
+      ]
+    }
+  })
+}
+
+resource "google_monitoring_alert_policy" "gke_high_cpu_alert" {
+  display_name = "GKE App: High Container CPU Usage (>80%)"
+  project = var.project_id
+
+  combiner = "AND"
+  conditions {
+    display_name = "Container CPU Utilization"
+    condition_threshold {
+      filter = "resource.type=\"k8s_container\" AND metric.type=\"kubernetes.io/container/cpu/core_usage_time\" AND metadata.user_labels.app=\"weather-app\""
+      comparison = "COMPARISON_GT"
+      duration = "120s"
+      threshold_value = 0.8
+      aggregations {
+        per_series_aligner = "ALIGN_RATE"
+        alignment_period = "60s"
+        group_by_fields = ["resource.label.container_name", "resource.label.pod_name"]
+      }
+
+      
+    }
+  }
+  notification_channels = [
+    google_monitoring_notification_channel.email_channel.id
+  ]
+}
+
+resource "google_monitoring_dashboard" "gke_app_dashboard" {
+  project      = var.project_id
+
+  dashboard_json = jsonencode({
+    "displayName" : "GKE App & Pod Performance (Filtered by Label)",
+    "gridLayout" : {
+      "columns" : "2",
+      "widgets" : [
+        {
+          "title" : "1. CPU Utilization (Container: weather-app)",
+          "xyChart" : {
+            "dataSets" : [{
+              "timeSeriesQuery" : {
+                "timeSeriesFilter" : {
+                  "filter": "metric.type=\"kubernetes.io/container/cpu/core_usage_time\" AND resource.type=\"k8s_container\" AND resource.labels.namespace_name=\"weather-app\"",
+                  "aggregation" : { "alignmentPeriod" : "60s", "perSeriesAligner" : "ALIGN_RATE" }
+                },
+                "unitOverride" : "1"
+              }
+            }]
+          }
+        },
+        {
+          "title" : "2. Memory Used (Container: weather-app)",
+          "xyChart" : {
+            "dataSets" : [{
+              "timeSeriesQuery" : {
+                "timeSeriesFilter" : {
+                  "filter": "metric.type=\"kubernetes.io/container/memory/used_bytes\" AND resource.type=\"k8s_container\" AND metadata.user_labels.app=\"weather-app\"",
+                  "aggregation" : { "alignmentPeriod" : "60s", "perSeriesAligner" : "ALIGN_MEAN" }
+                },
+                "unitOverride" : "bytes"
+              }
+            }]
+          }
+        },
+        {
+          "title" : "3. Storage usage (weather-app)",
+          "xyChart" : {
+            "dataSets" : [{
+              "timeSeriesQuery" : {
+                "timeSeriesFilter" : {
+                  "filter": "metric.type=\"kubernetes.io/container/ephemeral_storage/used_bytes\" AND resource.type=\"k8s_container\" AND metadata.user_labels.app=\"weather-app\"",
+                  "aggregation" : { "alignmentPeriod" : "60s", "crossSeriesReducer" : "REDUCE_SUM", "perSeriesAligner" : "ALIGN_MEAN", "groupByFields": ["resource.labels.pod_name"] }
+                }
+              }
+            }]
+          }
+        },
+            {
+        "title": "4. Weather API Request Rate (per city)",
+        "xyChart": {
+          "dataSets": [{
+            "timeSeriesQuery": {
+              "prometheusQuery": "rate(weather_requests_total[1m]) * 60",
+              "unitOverride": "1/min"
+            }
+          }],
+          "timeshiftDuration": "0s"
+        }
+      }
+    ]
+  }
+})
 }

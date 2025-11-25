@@ -13,10 +13,14 @@ spec:
     metadata:
       labels:
         app: weather-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: weather-app
-          image: us-central1-docker.pkg.dev/pythonsqlapp-478016/pythonsqlapp/weather-app:final
+          image: us-central1-docker.pkg.dev/pythonsqlapp-478016/pythonsqlapp/weather-app:production
           ports:
             - containerPort: 8080
           livenessProbe: 

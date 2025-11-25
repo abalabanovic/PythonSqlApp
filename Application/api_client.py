@@ -26,6 +26,7 @@ class WeatherAPIClient:
                 if response.status_code == 429:
                     wait_time = self.backoff_factor * (2 ** retries)
                     logger.info(f"Rate limited. Retrying in {wait_time} seconds....")
+                    time.sleep(wait_time)
                     retries += 1
                     continue
                 response.raise_for_status()

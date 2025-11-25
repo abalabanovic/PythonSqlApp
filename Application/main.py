@@ -7,9 +7,16 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from logger_config import logger
 from startup import initialize_database
+from prometheus_client import Counter, generate_latest
+from starlette.responses import Response
+
 app = FastAPI()
 api_client = WeatherAPIClient()
 
+REQUEST_COUNT = Counter(
+    "weather_requests_total",
+    "Total number of external weather API calls"
+)
 
 @app.on_event("startup")
 def startup_event():
@@ -19,6 +26,8 @@ def startup_event():
 @app.get("/fetch_weather/{city}")
 def fetch_and_store_weather(city: str, db: Session = Depends(get_db)):
     try:
+        REQUEST_COUNT.inc()
+        logger.info(f"Increased connection number for {city}")
         raw_data = api_client.fetch_weather(city)
         processed_data = process(raw_data)
         insert_weather_data(db, processed_data)
@@ -41,3 +50,7 @@ def readiness_check(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
         raise HTTPException(status_code=503, detail= "Database not ready")
+    
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type="text/plain")
